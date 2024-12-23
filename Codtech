@@ -1,0 +1,52 @@
+#sentiment analysis model to classify movie reviews as positive or negative.use a data set like the IMDB movie reviews data set for training and te
+
+#Import necessary libraries and load the dataset
+import pandas as pd
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import Pipeline
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+import nltk
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+#Load the IMDB movie reviews dataset
+train_data = pd.read_csv('imdb_train.csv')
+test_data = pd.read_csv('imdb_test.csv')
+
+#Preprocess the text data
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+
+def preprocess_text(text):
+    text = text.lower()
+    text = ' '.join([word for word in text.split() if word not in stop_words])
+    text = ' '.join([lemmatizer.lemmatize(word) for word in text.split()])
+    return text
+
+train_data['review'] = train_data['review'].apply(preprocess_text)
+test_data['review'] = test_data['review'].apply(preprocess_text)
+
+#Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(train_data['review'], train_data['sentiment'], test_size=0.2, random_state=42)
+
+#Create a pipeline with TF-IDF vectorization and Multinomial Naive Bayes classification
+pipeline = Pipeline([
+    ('vectorizer', TfidfVectorizer()),
+    ('classifier', MultinomialNB())
+])
+
+#Train the model on the training data
+pipeline.fit(X_train, y_train)
+
+#Evaluate the model on the testing data
+y_pred = pipeline.predict(X_test)
+print('Accuracy:', accuracy_score(y_test, y_pred))
+print('Classification Report:')
+print(classification_report(y_test, y_pred))
+print('Confusion Matrix:')
+print(confusion_matrix(y_test, y_pred))
